@@ -1,0 +1,19 @@
+# For localhost testing, you can use the following configuration
+localtest-home:
+  display_name: "LocalTest Home"
+  llm_apis:
+    - OpenAI: "OpenAI"
+    - AzureOpenAI: "Azure OpenAI"
+    - Groq: "Groq"
+  translate_apis:
+    - DeepL: "DeepL"
+
+# For production testing, you can use the following configuration
+prodtest-home:
+  display_name: "ProdTest Home"
+  llm_apis:
+    - OpenAI: "OpenAI"
+    - AzureOpenAI: "Azure OpenAI"
+    - Groq: "Groq"
+  translate_apis:
+    - DeepL: "DeepL"
