@@ -37,16 +37,22 @@ export default async function handler(
   };
   try {
     const llmAdapter = llmAdapterBuilder(llmId);
-    const translateAdapter = translateAdapterBuilder(translateId);
-    const translatedMessage = await translateAdapter.translateText(requestMessage, "en-US");
+
+    let translatedMessage;
+    let systemContent = "You are a smart home agent that can control devices in the home."
+    if (translateId !== "None") {
+      const translateAdapter = translateAdapterBuilder(translateId);
+      translatedMessage = await translateAdapter.translateText(requestMessage, "en-US");
+      systemContent += " The user will make requests in English, including the device names, but the assistant will respond in Japanese."
+    }
     const messages = [
       {
         role: "system",
-        content: "You are a smart home agent that can control devices in the home. The user will make requests in English, including the device names, but the assistant will respond in Japanese.",
+        content: systemContent,
       },
       {
         role: "user",
-        content: translatedMessage
+        content: translatedMessage || requestMessage
       }
     ];  
     const resObj = await llmAdapter.functionCalling(

@@ -34,7 +34,7 @@ export class DeeplAdapter implements TranslateAdapter {
       const resTextDelimiter = delimiter || " ";
       resultText = transRes.map(el => el.text).join(resTextDelimiter);
     } else {
-        resultText = transRes.text;
+      resultText = transRes.text;
     }
     return resultText;
   }

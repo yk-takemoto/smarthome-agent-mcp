@@ -49,10 +49,10 @@ export const Layout = ({ children }: { children: ReactNode }) => {
       );
       setAccountInfo(res);
       if (!selectedLlmId) {
-        setSelectedLlmId(Object.keys(res.llmList[0])[0] || "");
+        setSelectedLlmId(session.selectedLlmId || Object.keys(res.llmList[0])[0] || "");
       }
       if (!selectedTranslateId) {
-        setSelectedTranslateId(Object.keys(res.translateList[0])[0] || "");
+        setSelectedTranslateId(session.selectedTranslateId || "None");
       }
     } catch (error) {
       console.error("Failed to fetch account info:", error);
@@ -169,11 +169,14 @@ export const Layout = ({ children }: { children: ReactNode }) => {
               label="translationAPI"
               onChange={handleTranslationChange}
             >
+              <MenuItem key={0} value="None">
+                使用しない
+              </MenuItem>
               {accountInfo?.translateList.map((translate, index) => {
                 const key = Object.keys(translate)[0];
                 const value = translate[key];
                 return (
-                  <MenuItem key={index} value={key}>
+                  <MenuItem key={index + 1} value={key}>
                     {value}
                   </MenuItem>
                 );
