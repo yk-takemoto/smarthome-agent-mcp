@@ -1,24 +1,28 @@
 import { promises as fs } from "fs";
-import { Groq } from "groq-sdk";
+import Anthropic from "@anthropic-ai/sdk";
 import {
-  ChatCompletionTool,
-  ChatCompletionMessageParam,
-  ChatCompletionToolChoiceOption,
-} from "groq-sdk/resources/chat/completions";
+  TextBlockParam,
+  MessageParam,
+  MessageCreateParams,
+  Tool,
+  ToolChoice,
+  TextBlock,
+  ToolResultBlockParam
+} from "@anthropic-ai/sdk/resources/messages.mjs";
 import { LlmAdapter, FunctionCallingResponse, FunctionCallingOptions, TextToSpeechResponse } from "./llm_adapter"
 
-export class GroqAdapter implements LlmAdapter {
+export class AnthropicAdapter implements LlmAdapter {
 
-  protected groqClient;
+  protected anthropicClient;
 
   constructor(
     protected llmConfig = {
-      apiKey: JSON.parse(process.env.APP_SECRETS || "{}").GROQ_API_KEY || process.env.GROQ_API_KEY || "",
-      apiModelChat: process.env.GROQ_API_MODEL_CHAT!,
+      apiKey: JSON.parse(process.env.APP_SECRETS || "{}").ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY || "",
+      apiModelChat: process.env.ANTHROPIC_API_MODEL_CHAT!,
     },
   ) {
     this.initCheck(llmConfig);
-    this.groqClient = new Groq({apiKey: llmConfig.apiKey});
+    this.anthropicClient = new Anthropic({apiKey: llmConfig.apiKey});
   };
 
   private initCheck(llmConfig: Record<string, string>) {
@@ -36,27 +40,28 @@ export class GroqAdapter implements LlmAdapter {
     options: FunctionCallingOptions
   ): Promise<FunctionCallingResponse> {
 
-    const funcMessages: ChatCompletionMessageParam[] = [];
+    const funcSystemPrompt: TextBlockParam[] = [];
     systemPrompt.forEach(msg => {
-      funcMessages.push({
-        role: "system",
-        content: msg,
+      funcSystemPrompt.push({
+        type: "text",
+        text: msg,
       });
     });
+    const funcMessages: MessageParam[] = [];
     messages.forEach(msg => {
       funcMessages.push({
         role: "user",
         content: msg,
       });
     });
-    const funcOtions = {
+    const funcOtions: MessageCreateParams = {
       model: this.llmConfig.apiModelChat,
       messages: funcMessages,
-      tools: options.tools as ChatCompletionTool[],
-      tool_choice: options.toolChoice || "auto" as ChatCompletionToolChoiceOption,
+      system: funcSystemPrompt,
+      tools: options.tools as Tool[],
+      tool_choice: {type: options.toolChoice || "auto"} as ToolChoice,
       max_tokens: options.maxTokens as number || 1028,
       temperature: options.temperature as number ?? 0.7,
-      response_format: options.responseFormat,
     };
     const response: FunctionCallingResponse = {
       resAssistantMessage: "",
@@ -65,26 +70,33 @@ export class GroqAdapter implements LlmAdapter {
     try {
 
       // debug
-      console.log("[functionCalling] chatCompletions start -- funcMessages: ", JSON.stringify(funcMessages));
-      const chatResponse = await this.groqClient.chat.completions.create(funcOtions);
-      const choice = chatResponse.choices[0];
-      const finishReason = choice.finish_reason;
+      console.log(
+        "[functionCalling] chatCompletions start -- funcSystemPrompt: ", JSON.stringify(funcSystemPrompt),
+        " -- funcMessages: ", JSON.stringify(funcMessages)
+      );
+      const chatResponse = await this.anthropicClient.messages.create(funcOtions);
+      const contents = chatResponse.content;
+      const stopReason = chatResponse.stop_reason;
       // debug
-      console.log(`[functionCalling] chatCompletions end -- choices[0].message: ${JSON.stringify(choice.message)} finishReason: ${finishReason}`);
+      console.log(`[functionCalling] chatCompletions end -- contents: ${JSON.stringify(contents)} stopReason: ${stopReason}`);
   
-      if (finishReason !== "tool_calls") {
-        response.resAssistantMessage = choice.message?.content || "Sorry, there was no response from the agent.";
+      if (stopReason !== "tool_use") {
+        response.resAssistantMessage = (contents[0] as TextBlock).text || "Sorry, there was no response from the agent.";
         return response;
       }
-      
-      if (choice.message) {
-        const toolMessage = choice.message;
-        funcMessages.push(toolMessage);
-  
-        for (const toolCall of toolMessage?.tool_calls || []) {
-          const functionName = toolCall.function.name;
+      if (chatResponse) {
+        funcMessages.push({
+          role: chatResponse.role,
+          content: contents
+        });
+        const toolResults: ToolResultBlockParam[] = [];
+        for (const contentBlock of contents || []) {
+          if (contentBlock.type !== "tool_use") {
+            continue;
+          }
+          const functionName = contentBlock.name;
           const functionToCall = functions[functionName];
-          const functionArgs = JSON.parse(toolCall.function.arguments);
+          const functionArgs = JSON.parse(JSON.stringify(contentBlock.input));
           const values = Object.values(functionArgs);
           const functionOutput = functionToCall ? await functionToCall(...values) : {error: `${functionName} is not available`};
           // debug
@@ -95,20 +107,22 @@ export class GroqAdapter implements LlmAdapter {
             content: JSON.stringify(content)
           };
           const toolResult = {
-            tool_call_id: toolCall.id,
-            role: "tool",
+            tool_use_id: contentBlock.id,
+            type: "tool_result" as "tool_result",
             ...resToolMessage
           };
-          funcMessages.push(toolResult as ChatCompletionMessageParam);
+          toolResults.push(toolResult);
           response.resToolMessages.push(resToolMessage);
         }
+        funcMessages.push({ role: "user", content: toolResults });
+
         // debug
         console.log("[functionCalling] chatCompletions start -- funcMessages: ", JSON.stringify(funcMessages));
         funcOtions.messages = funcMessages;
-        const nextChatResponse = await this.groqClient.chat.completions.create(funcOtions);
-        response.resAssistantMessage = nextChatResponse.choices[0].message?.content || "Sorry, there was no response from the agent. If the following details are displayed, please check them.";
+        const nextChatResponse = await this.anthropicClient.messages.create(funcOtions);
+        response.resAssistantMessage = (nextChatResponse.content[0] as TextBlock).text || "Sorry, there was no response from the agent. If the following details are displayed, please check them.";
         // debug
-        console.log(`[functionCalling] chatCompletions end -- choices[0].message?.content: ${response.resAssistantMessage}`);
+        console.log(`[functionCalling] chatCompletions end -- content[0].text: ${response.resAssistantMessage}`);
   
         // funcMessages.push({ role: "assistant", content: response.resAssistantMessage });
       }

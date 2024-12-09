@@ -1,20 +1,34 @@
 import * as fs from "fs";
 import path from "path";
 
-const deviceControlTools = (): any[] => {
-  const tools: any[] = [];
+const deviceControlTools = (): (id?: string) => any[] => {
+  const toolEntries: { [id: string]: any[] } = {};
   const funcdefDir = path.resolve("funcdef");
-  const files = fs.readdirSync(funcdefDir);
-  files.forEach(file => {
-    if (path.extname(file) === ".json") {
-      const filePath = path.join(funcdefDir, file);
-      const fileContent = fs.readFileSync(filePath, "utf-8");
+  const entries = fs.readdirSync(funcdefDir, { withFileTypes: true });
+
+  const commonTools: any[] = [];
+  entries.forEach(entry => {
+    const entryPath = path.join(funcdefDir, entry.name);
+    if (entry.isFile() && path.extname(entry.name) === ".json") {
+      const fileContent = fs.readFileSync(entryPath, "utf-8");
       const jsonData = JSON.parse(fileContent);
-      tools.push(jsonData);
+      commonTools.push(jsonData);
+    } else if (entry.isDirectory()) {
+      const nestedJsonFiles = fs.readdirSync(entryPath).filter(file => path.extname(file) === ".json");
+      const nestedJsonData: any[] = [];
+      nestedJsonFiles.forEach(file => {
+        const fileContent = fs.readFileSync(path.join(entryPath, file), "utf-8");
+        const jsonData = JSON.parse(fileContent);
+        nestedJsonData.push(jsonData);
+      });
+      toolEntries[entry.name] = nestedJsonData;
     }
   });
+  toolEntries["Common"] = commonTools;
 
-  return tools;
+  return (id?: string) => {
+    return (id && id in toolEntries) ? toolEntries[id] : toolEntries["Common"];
+  };
 };
 
 export default deviceControlTools;

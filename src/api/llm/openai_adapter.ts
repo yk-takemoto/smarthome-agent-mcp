@@ -27,11 +27,24 @@ export class OpenAIAdapter<T extends OpenAI> implements LlmAdapter {
 
   async functionCalling(
     functions: { [functionId: string]: Function },
-    messages: OpenAI.ChatCompletionMessageParam[],
+    systemPrompt: string[],
+    messages: string[],
     options: FunctionCallingOptions
   ): Promise<FunctionCallingResponse> {
 
-    const funcMessages = Array.from(messages);
+    const funcMessages: OpenAI.ChatCompletionMessageParam[] = [];
+    systemPrompt.forEach(msg => {
+      funcMessages.push({
+        role: "system",
+        content: msg,
+      });
+    });
+    messages.forEach(msg => {
+      funcMessages.push({
+        role: "user",
+        content: msg,
+      });
+    });
     const funcOtions = {
       model: this.llmConfig.apiModelChat,
       messages: funcMessages,
@@ -74,13 +87,16 @@ export class OpenAIAdapter<T extends OpenAI> implements LlmAdapter {
           console.log("[functionCalling] ", functionName, functionArgs, "function_output: ", functionOutput);
   
           const content = { ...functionArgs, function_output: functionOutput };
-          const toolMessage = {
+          const resToolMessage = {
+            content: JSON.stringify(content)
+          };
+          const toolResult = {
             tool_call_id: toolCall.id,
             role: "tool",
-            content: JSON.stringify(content),
+            ...resToolMessage
           };
-          funcMessages.push(toolMessage as OpenAI.ChatCompletionMessageParam);
-          response.resToolMessages.push(toolMessage);
+          funcMessages.push(toolResult as OpenAI.ChatCompletionMessageParam);
+          response.resToolMessages.push(resToolMessage);
         }
         // debug
         console.log("[functionCalling] chatCompletions start -- funcMessages: ", JSON.stringify(funcMessages));
@@ -90,7 +106,7 @@ export class OpenAIAdapter<T extends OpenAI> implements LlmAdapter {
         // debug
         console.log(`[functionCalling] chatCompletions end -- choices[0].message?.content: ${response.resAssistantMessage}`);
   
-        funcMessages.push({ role: "assistant", content: response.resAssistantMessage });
+        // funcMessages.push({ role: "assistant", content: response.resAssistantMessage });
       }
     } catch (error) {
       // debug

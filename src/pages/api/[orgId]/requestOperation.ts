@@ -32,32 +32,23 @@ export default async function handler(
   const translateId = requestTranslateId || "DeepL";
   const options = {
     maxTokens: 1028,
-    tools: devCtlTools,
+    tools: devCtlTools(llmId),
     toolChoice: "auto",
   };
   try {
     const llmAdapter = llmAdapterBuilder(llmId);
 
     let translatedMessage;
-    let systemContent = "You are a smart home agent that can control devices in the home."
+    let systemPrompt = "You are a smart home agent that can control devices in the home."
     if (translateId !== "None") {
       const translateAdapter = translateAdapterBuilder(translateId);
       translatedMessage = await translateAdapter.translateText(requestMessage, "en-US");
-      systemContent += " The user will make requests in English, including the device names, but the assistant will respond in Japanese."
+      systemPrompt += " The user will make requests in English, including the device names, but the assistant will respond in Japanese."
     }
-    const messages = [
-      {
-        role: "system",
-        content: systemContent,
-      },
-      {
-        role: "user",
-        content: translatedMessage || requestMessage
-      }
-    ];  
     const resObj = await llmAdapter.functionCalling(
       devCtlFunctions,
-      messages,
+      [systemPrompt],
+      [translatedMessage || requestMessage],
       options
     );
     res.status(200).json(resObj);

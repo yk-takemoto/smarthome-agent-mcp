@@ -1,8 +1,6 @@
 export type FunctionCallingResponse = {
   resAssistantMessage: string;
   resToolMessages: {
-    tool_call_id: string;
-    role: string;
     content: string;
   }[];
 }
@@ -20,7 +18,8 @@ export type TextToSpeechResponse = {
 export interface LlmAdapter {
   functionCalling(
     functions: { [functionId: string]: Function },
-    messages: any[],
+    systemPrompt: string[],
+    messages: string[],
     options: FunctionCallingOptions
   ): Promise<FunctionCallingResponse>;
 

@@ -24,8 +24,6 @@ export type CommonExceptionResponse = {
 export type ChatResponse = {
   resAssistantMessage: string;
   resToolMessages: {
-    tool_call_id: string;
-    role: string;
     content: string;
   }[];
 }

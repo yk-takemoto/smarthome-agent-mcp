@@ -4,6 +4,7 @@ localtest-home:
   llm_apis:
     - OpenAI: "OpenAI"
     - AzureOpenAI: "Azure OpenAI"
+    - Anthropic: "Anthropic(Claude)"
     - Groq: "Groq"
   translate_apis:
     - DeepL: "DeepL"
@@ -14,6 +15,7 @@ prodtest-home:
   llm_apis:
     - OpenAI: "OpenAI"
     - AzureOpenAI: "Azure OpenAI"
+    - Anthropic: "Anthropic(Claude)"
     - Groq: "Groq"
   translate_apis:
     - DeepL: "DeepL"
