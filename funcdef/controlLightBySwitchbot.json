@@ -1,0 +1,24 @@
+{
+    "type": "function",
+    "function": {
+        "name": "controlLightBySwitchbot",
+        "description": "Control light given command by Switchbot.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "commandType": {
+                    "type": "string",
+                    "description": "The Command target to control light. e.g. if target is 'living room' then commandType='main', else if target is 'next to the living room' then commandType='next', else commandType='other'"
+                },
+                "commandTurning": {
+                    "type": "string",
+                    "description": "The Command to send power On/Off. e.g. 'turnOn', 'turnOff'"
+                }
+            },
+            "required": [
+                "commandType",
+                "command"
+            ]
+        }
+    }
+}

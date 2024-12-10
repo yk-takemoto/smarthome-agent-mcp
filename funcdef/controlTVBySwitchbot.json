@@ -1,0 +1,32 @@
+{
+    "type": "function",
+    "function": {
+        "name": "controlTVBySwitchbot",
+        "description": "Control TV given command by Switchbot.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "commandType": {
+                    "type": "string",
+                    "description": "The Command type to control TV. e.g. 'power', 'channel', 'volume'"
+                },
+                "commandOfPowerchange": {
+                    "type": "string",
+                    "description": "The Command to change power status. e.g. 'change', 'turnOn', 'turnOff'"
+                },
+                "commandOfChannelsetting": {
+                    "type": "integer",
+                    "description": "The Command to set channel from 1 to 12."
+                },
+                "commandOfVolumechange": {
+                    "type": "integer",
+                    "description": "The Command to change volume from -3 to 3."
+                }
+            },
+            "required": [
+                "commandType",
+                "command"
+            ]
+        }
+    }
+}
