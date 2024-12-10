@@ -137,7 +137,7 @@ prodtest-home:
 | `OPENAI_API_MODEL_TEXT2SPEECH` | 読み上げ用モデル名<br/>（ex. `tts-1`） ||
 
 ### Azure OpenAI Service
-事前準備として、Azureサブスクリプションを登録のうえ、[リソースの作成とモデルのディプロイ](https://learn.microsoft.com/ja-jp/azure/ai-services/openai/how-to/create-resourceが?pivots=web-portal)が必要になります。
+事前準備として、Azureサブスクリプションを登録のうえ、[リソースの作成とモデルのディプロイ](https://learn.microsoft.com/ja-jp/azure/ai-services/openai/how-to/create-resource)が必要になります。
 
 #### 環境変数一覧
 | 変数名 | 内容 | Secret
@@ -162,7 +162,7 @@ Anthropicも、OpenAI同様最低限APIキーのみで使用可能です。\
 ### Groq
 OpenAI APIとの互換性と高速レスポンスを強みとしているLLMプロバイダです。\
 2024年10月時点では、`Llama-3.1-70B`などの高性能モデルを無料で使えます。\
-https://console.groq.com/docs/models\
+https://console.groq.com/docs/models \
 \
 こちらもAPIキーについては[公式のAPIサイト](https://console.groq.com)からサインアップのうえ払出ししてください。
 
