@@ -11,7 +11,7 @@
 ## 基本仕様
 - 言語・フレームワークは、`TypeScript + Next.js`で作成
 - UIコンポーネントは、 `MUI（Material-UI）`を使用
-- 音声入力（Speech-to-text）は、LLM APIは使用せず`react-speech-recognition`を使用
+- 文字起こし（Speech-to-text）は、LLM APIは使用せず`react-speech-recognition`を使用
 
 ## 認証・認可
 - `NextAuth.js`を使用
@@ -184,16 +184,16 @@ LLM APIとの接続部分は、各プロバイダ毎にAdapter方式で実装さ
 - `/src/api/llm/`配下に、インターフェース`LlmAdapter`を実装したAdapterクラスを作成
 - Adapterクラスのコンストラクタでは、APIキーやモデル名などの必要なパラメータを環境変数から取得し、APIクライアントインスタンスを生成
 - `functionCalling`メソッドを、大枠以下の流れで実装
-  1. 引数`systemPrompt`（LLM API向けのsystemプロンプト用メッセージ）、引数`messages`（userプロンプト用メッセージ）を元にFunction Calling用の入力プロンプト配列を生成
-  2. 新message配列を含めた、Function Calling向けのOptionオブジェクトを引数`options`を元に生成
-  3. 生成したOptionを指定してLLMのChat APIをコール、レスポンスから`finish_reason`を取得
+  1. 引数`systemPrompt`（LLM API向けのsystemプロンプト用メッセージ）、引数`messages`（userプロンプト用メッセージ）を元にFunction Calling用のmessage配列を生成
+  2. 1.で生成したmessage配列を含めた、Function Calling向けのOptionオブジェクトを引数`options`を元に生成
+  3. 生成したOptionを指定してLLMのChat APIをコール、レスポンスから`finish_reason`取得
   4. `finish_reason`がtool呼出し以外、つまりFunction Callingと判定されなかった場合は応答されたAssistantメッセージをそのまま応答
   5. Function Callingと判定された場合、レスポンスから対象Functionを順番に取り出して実行
     - 5-1.Function名を取得
     - 5-2. 引数`functions`から対象Function名を元に実行する`Function`オブジェクトを取得
     - 5-3. Function実行時に渡す実行引数（JSON形式）をパースして取得
     - 5-4. 取得した実行引数を指定してFunction実行
-    - 5-5. Function実行結果をLLM Chat形式に整形して、1.でコピーしたmessage配列に追加
+    - 5-5. Function実行結果を整形して、1.で生成したmessage配列に追加
   6. 5.でFunction実行結果が追加されたmessage配列を指定して、3.と同様に再度LLMのChat APIをコール
   7. レスポンスメッセージをAssistantメッセージとして応答
 
@@ -449,7 +449,7 @@ const functionClasses: Record<string, DeviceControlClientConstructor> = {
 //～～省略～～
 ```
 
-#### FunctionとデバイスIDのJSONマップ
+#### FunctionとデバイスIDのマッピング
 - 作成したFunctionクラスが、デバイスを操作する（＝操作するためのAPIを呼び出す）には前述で確認したデバイスIDが必要
 - FunctionクラスがデバイスIDを参照できるように、以下JSON形式でtool定義の`function.name`とデバイスIDのマップを定義して後述の環境変数に設定
 ```json
