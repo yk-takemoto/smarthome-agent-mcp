@@ -1,11 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { errorHandler } from "@/api/error";
-import { deviceControlTools, deviceControlFunctions } from "@/api/devctl";
+import { DeviceControlClient } from "@/api/devctl";
 import { llmAdapterBuilder } from "@/api/llm";
 import { translateAdapterBuilder } from "@/api/translate";
 
-const devCtlTools = deviceControlTools();
-const devCtlFunctions = deviceControlFunctions();
+type ChatResponse = {
+  resAssistantMessage: string;
+  resToolMessages: {
+    content: string;
+  }[];
+}
 
 export default async function handler(
   req: NextApiRequest,
@@ -30,10 +34,9 @@ export default async function handler(
 
   const llmId = requestLlmId || "AzureOpenAI";
   const translateId = requestTranslateId || "DeepL";
-  const options = {
-    maxTokens: 1028,
-    tools: devCtlTools(llmId),
-    toolChoice: "auto",
+  let response: ChatResponse = {
+    resAssistantMessage: "",
+    resToolMessages: []
   };
   try {
     const llmAdapter = llmAdapterBuilder(llmId);
@@ -45,13 +48,66 @@ export default async function handler(
       translatedMessage = await translateAdapter.translateText(requestMessage, "en-US");
       systemPrompt += " The user will make requests in English, including the device names, but the assistant will respond in Japanese."
     }
-    const resObj = await llmAdapter.functionCalling(
-      devCtlFunctions,
+
+    const devCtlClient = new DeviceControlClient();
+    const tools = await devCtlClient.listToolResultSchema();
+
+    const options = {
+      maxTokens: 1028,
+      tools: tools,
+      toolChoice: "auto",
+    };  
+    const chatResponse = await llmAdapter.chatCompletions(
       [systemPrompt],
       [translatedMessage || requestMessage],
       options
     );
-    res.status(200).json(resObj);
+
+    if (chatResponse.tools.length === 0) {
+      response.resAssistantMessage = chatResponse.text || "Sorry, there was no response from the agent.";
+      return res.status(200).json(response);
+    }
+
+    const resToolMessages: any[] = [];
+    let resToolMessage = { content: "{}" };
+    const toolResults: {
+      id: string;
+      content: string;
+    }[] = [];
+    for (const tool of chatResponse.tools) {
+      try {
+        const resObj = await devCtlClient.callToolResultSchema(tool);
+        resToolMessage = {
+          content: resObj[0].text as string
+        };
+      } catch (error) {
+        resToolMessage = {
+          content: JSON.stringify(errorHandler("Sorry, an error occurred while operating the device. Please check if the device is in an operable state.", error))
+        };
+      } finally {
+        toolResults.push({
+          id: tool.id,
+          ...resToolMessage
+        });
+        resToolMessages.push(resToolMessage);
+      }
+    }
+
+    const nextChatResponse = await llmAdapter.chatCompletions(
+      [],
+      [],
+      options,
+      {
+        messages: chatResponse.messages,
+        toolResults: toolResults
+      }
+    );
+
+    response = {
+      resAssistantMessage: nextChatResponse.text || "Sorry, there was no response from the agent. If the following details are displayed, please check them.",
+      resToolMessages: resToolMessages
+    };
+    res.status(200).json(response);
   } catch (error) {
     res.status(500).json(errorHandler("[requestOperation] requestOperation failed", error));
   }

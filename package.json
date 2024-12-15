@@ -1,18 +1,23 @@
 {
-  "name": "smarthome-agent",
+  "name": "smarthome-agent-mcp",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "prebuild": "npm run build --workspaces",
     "build": "next build",
+    "dev": "next dev",
     "start": "next start",
     "lint": "next lint"
   },
+  "workspaces": [
+    "packages/*"
+  ],
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
     "@emotion/react": "^11.11.4",
     "@emotion/server": "^11.11.0",
     "@emotion/styled": "^11.11.5",
+    "@modelcontextprotocol/sdk": "^1.0.3",
     "@mui/icons-material": "^5.16.1",
     "@mui/material": "^5.16.1",
     "deepl-node": "^1.15.0",

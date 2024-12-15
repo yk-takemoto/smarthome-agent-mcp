@@ -1,7 +1,7 @@
 {
     "name": "controlTVBySwitchbot",
     "description": "Control TV given command by Switchbot.",
-    "input_schema": {
+    "inputSchema": {
         "type": "object",
         "properties": {
             "commandType": {

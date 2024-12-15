@@ -1,4 +1,3 @@
-import deviceControlTools from "./device_control_tools";
-import deviceControlFunctions from "./device_control_functions";
+import { DeviceControlClient } from "./device_control_client";
 
-export { deviceControlTools, deviceControlFunctions };
+export { DeviceControlClient };

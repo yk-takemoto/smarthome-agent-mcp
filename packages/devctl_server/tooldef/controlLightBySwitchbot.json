@@ -1,7 +1,7 @@
 {
     "name": "controlLightBySwitchbot",
     "description": "Control light given command by Switchbot.",
-    "input_schema": {
+    "inputSchema": {
         "type": "object",
         "properties": {
             "commandType": {

@@ -9,7 +9,13 @@ import {
   TextBlock,
   ToolResultBlockParam
 } from "@anthropic-ai/sdk/resources/messages.mjs";
-import { LlmAdapter, FunctionCallingResponse, FunctionCallingOptions, TextToSpeechResponse } from "./llm_adapter"
+import {
+  LlmAdapter,
+  TextToSpeechResponse,
+  MpcTool,
+  ChatCompletionsOptions,
+  ChatCompletionsResponse
+} from "./llm_adapter"
 
 export class AnthropicAdapter implements LlmAdapter {
 
@@ -33,107 +39,115 @@ export class AnthropicAdapter implements LlmAdapter {
     }
   }
 
-  async functionCalling(
-    functions: { [functionId: string]: Function },
-    systemPrompt: string[],
-    messages: string[],
-    options: FunctionCallingOptions
-  ): Promise<FunctionCallingResponse> {
+  private convertTools(tools: MpcTool[]): Tool[] {
+    return tools.map(tool => {
+      return {
+        name: tool.name,
+        description: tool.description,
+        input_schema: tool.inputSchema as Tool.InputSchema
+      }
+    });
+  }
 
-    const funcSystemPrompt: TextBlockParam[] = [];
+  async chatCompletions(
+    systemPrompt: string[],
+    firstMessages: string[],
+    options: ChatCompletionsOptions,
+    inProgress?: {
+      messages: MessageParam[];
+      toolResults?: {
+        id: string;
+        content: string;
+      }[];
+    }
+  ): Promise<ChatCompletionsResponse> {
+
+    const covertedSystemPrompt: TextBlockParam[] = [];
     systemPrompt.forEach(msg => {
-      funcSystemPrompt.push({
+      covertedSystemPrompt.push({
         type: "text",
         text: msg,
       });
     });
-    const funcMessages: MessageParam[] = [];
-    messages.forEach(msg => {
-      funcMessages.push({
-        role: "user",
-        content: msg,
+    let updatedMessages: MessageParam[] = [];
+    if (inProgress) {
+      const resMessages = inProgress.toolResults?.map(toolResult => {
+        return {
+          tool_use_id: toolResult.id,
+          type: "tool_result" as "tool_result",
+          content: toolResult.content
+        } as ToolResultBlockParam;
+      }) || [];
+      updatedMessages = inProgress.messages.concat(
+        { role: "user", content: resMessages }
+      );
+    } else {
+      firstMessages.forEach(msg => {
+        updatedMessages.push({
+          role: "user",
+          content: msg,
+        });
       });
-    });
+    }
     const funcOtions: MessageCreateParams = {
       model: this.llmConfig.apiModelChat,
-      messages: funcMessages,
-      system: funcSystemPrompt,
-      tools: options.tools as Tool[],
+      messages: updatedMessages,
+      system: covertedSystemPrompt,
+      tools: this.convertTools(options.tools),
       tool_choice: {type: options.toolChoice || "auto"} as ToolChoice,
       max_tokens: options.maxTokens as number || 1028,
       temperature: options.temperature as number ?? 0.7,
     };
-    const response: FunctionCallingResponse = {
-      resAssistantMessage: "",
-      resToolMessages: []
+    let response: ChatCompletionsResponse = {
+      text: "",
+      tools: [],
+      messages: []
     };
     try {
 
       // debug
       console.log(
-        "[functionCalling] chatCompletions start -- funcSystemPrompt: ", JSON.stringify(funcSystemPrompt),
-        " -- funcMessages: ", JSON.stringify(funcMessages)
+        "[chatCompletions] start -- covertedSystemPrompt: ", JSON.stringify(covertedSystemPrompt),
+        " -- updatedMessages: ", JSON.stringify(updatedMessages)
       );
       const chatResponse = await this.anthropicClient.messages.create(funcOtions);
       const contents = chatResponse.content;
       const stopReason = chatResponse.stop_reason;
       // debug
-      console.log(`[functionCalling] chatCompletions end -- contents: ${JSON.stringify(contents)} stopReason: ${stopReason}`);
+      console.log(`[chatCompletions] end -- contents: ${JSON.stringify(contents)} stopReason: ${stopReason}`);
   
-      if (stopReason !== "tool_use") {
-        response.resAssistantMessage = (contents[0] as TextBlock).text || "Sorry, there was no response from the agent.";
-        return response;
-      }
+      let resTools: { id:string, name:string, arguments: Record<string, any> }[] = [];
       if (chatResponse) {
-        funcMessages.push({
+        updatedMessages.push({
           role: chatResponse.role,
           content: contents
         });
-        const toolResults: ToolResultBlockParam[] = [];
-        for (const contentBlock of contents || []) {
-          if (contentBlock.type !== "tool_use") {
-            continue;
-          }
-          const functionName = contentBlock.name;
-          const functionToCall = functions[functionName];
-          const functionArgs = JSON.parse(JSON.stringify(contentBlock.input));
-          const values = Object.values(functionArgs);
-          const functionOutput = functionToCall ? await functionToCall(...values) : {error: `${functionName} is not available`};
-          // debug
-          console.log("[functionCalling] ", functionName, functionArgs, "function_output: ", functionOutput);
-  
-          const content = { ...functionArgs, function_output: functionOutput };
-          const resToolMessage = {
-            content: JSON.stringify(content)
+        resTools = (
+          stopReason === "tool_use"
+        ) ? contents?.filter(
+          contentBlock => contentBlock.type === "tool_use"
+        ).map(contentBlock => {
+          return {
+            id: contentBlock.id,
+            name: contentBlock.name,
+            arguments: JSON.parse(JSON.stringify(contentBlock.input)) as Record<string, any>
           };
-          const toolResult = {
-            tool_use_id: contentBlock.id,
-            type: "tool_result" as "tool_result",
-            ...resToolMessage
-          };
-          toolResults.push(toolResult);
-          response.resToolMessages.push(resToolMessage);
-        }
-        funcMessages.push({ role: "user", content: toolResults });
-
-        // debug
-        console.log("[functionCalling] chatCompletions start -- funcMessages: ", JSON.stringify(funcMessages));
-        funcOtions.messages = funcMessages;
-        const nextChatResponse = await this.anthropicClient.messages.create(funcOtions);
-        response.resAssistantMessage = (nextChatResponse.content[0] as TextBlock).text || "Sorry, there was no response from the agent. If the following details are displayed, please check them.";
-        // debug
-        console.log(`[functionCalling] chatCompletions end -- content[0].text: ${response.resAssistantMessage}`);
-  
-        // funcMessages.push({ role: "assistant", content: response.resAssistantMessage });
+        }) || [] : [];
       }
+
+      response = {
+        text: (contents[0] as TextBlock).text || null,
+        tools: resTools,
+        messages: updatedMessages
+      };
     } catch (error) {
       // debug
-      console.log("[functionCalling] Error: ", error);
+      console.log("[chatCompletions] Error: ", error);
       throw error;
     }
 
     // debug
-    console.log("[functionCalling] response: ", response);
+    console.log("[chatCompletions] response: ", response);
     return response;
   }
 

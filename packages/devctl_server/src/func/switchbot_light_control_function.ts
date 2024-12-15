@@ -1,6 +1,6 @@
-import { SwitchbotControlClient } from "./switchbot_control_client"
+import { SwitchbotControlFunction } from "./switchbot_control_function.js"
 
-export class SwitchBotLightControlClient extends SwitchbotControlClient {
+export class SwitchBotLightControlFunction extends SwitchbotControlFunction {
 
   // ON/OFF命令に対して変更コマンドを送る回数(ON/OFFが明示的に分かれていないDevice仕様向け)
   private countOfTurnOn = 3;
@@ -10,8 +10,9 @@ export class SwitchBotLightControlClient extends SwitchbotControlClient {
     super(functionId);
   }
 
-  async controlDevice(commandType: string, command: string | number): Promise<Record<string, string>> {
-    console.log(`[LightControlClient] commandType: ${commandType} command: ${command}`);
+  async controlDevice(args: Record<string, any>): Promise<Record<string, string>> {
+    console.error(`[LightControlClient] args: ${JSON.stringify(args)}`);
+    const { commandType, command } = this.checkArgs(args);
 
     let deviceId: string;
     if (commandType === "main") {

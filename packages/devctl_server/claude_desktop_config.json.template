@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "devctl_server": {
+      "command": "/path/to/node",
+      "args": [
+        "/path/to/server/root/build/index.js"
+      ],
+      "env": {
+        "SWITCHBOT_ENDPOINT": "https://api.switch-bot.com",
+        "SWITCHBOT_TOKEN": "<token>",
+        "SWITCHBOT_SECRET_KEY": "<secret>",
+        "SWITCHBOT_FUNCTION_DEVICEIDS_MAP": "{\"controlTVBySwitchbot\": {\"main\": \"xxxx\"}, \"controlFanBySwitchbot\": {\"main\": \"xxxx\"}, \"controlAirconBySwitchbot\": {\"main\": \"xxxx\"}, \"controlLightBySwitchbot\": {\"main\": \"xxxx\", \"next\": \"xxxx\"}}"
+      }
+    }
+  }
+}
