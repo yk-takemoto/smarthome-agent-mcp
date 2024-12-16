@@ -6,6 +6,7 @@
         "/path/to/server/root/build/index.js"
       ],
       "env": {
+        "DEVCTL_SERVER_ROOTPATH": "/path/to/server/root",
         "SWITCHBOT_ENDPOINT": "https://api.switch-bot.com",
         "SWITCHBOT_TOKEN": "<token>",
         "SWITCHBOT_SECRET_KEY": "<secret>",

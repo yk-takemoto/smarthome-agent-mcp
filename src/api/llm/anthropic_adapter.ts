@@ -12,7 +12,7 @@ import {
 import {
   LlmAdapter,
   TextToSpeechResponse,
-  MpcTool,
+  McpTool,
   ChatCompletionsOptions,
   ChatCompletionsResponse
 } from "./llm_adapter"
@@ -39,7 +39,7 @@ export class AnthropicAdapter implements LlmAdapter {
     }
   }
 
-  private convertTools(tools: MpcTool[]): Tool[] {
+  private convertTools(tools: McpTool[]): Tool[] {
     return tools.map(tool => {
       return {
         name: tool.name,

@@ -10,8 +10,12 @@ export class DeviceControlClient {
 
   constructor(
     private devCtlConfig = {
-      nodeHome: process.env.NODE_HOME!,
-      devCtlServerRootPath: process.env.DEVCTL_SERVER_ROOTPATH!,
+      nodeHome: process.env.NODE_HOME || "",
+      devCtlServerRootPath: process.env.DEVCTL_SERVER_ROOTPATH || "",
+      devCtlToken: JSON.parse(process.env.APP_SECRETS || "{}").SWITCHBOT_TOKEN || process.env.SWITCHBOT_TOKEN || "",
+      devCtlSecret: JSON.parse(process.env.APP_SECRETS || "{}").SWITCHBOT_SECRET_KEY || process.env.SWITCHBOT_SECRET_KEY || "",
+      devCtlEndpoint: process.env.SWITCHBOT_ENDPOINT || "",
+      devCtlFunctionDeviceIdsMap: JSON.parse(process.env.APP_SECRETS || "{}").SWITCHBOT_FUNCTION_DEVICEIDS_MAP || process.env.SWITCHBOT_FUNCTION_DEVICEIDS_MAP || ""
     },
   ) {
     this.initCheck(devCtlConfig);
@@ -23,10 +27,10 @@ export class DeviceControlClient {
       ],
       env: {
         DEVCTL_SERVER_ROOTPATH: this.devCtlConfig.devCtlServerRootPath,
-        SWITCHBOT_TOKEN: JSON.parse(process.env.APP_SECRETS || "{}").SWITCHBOT_TOKEN || process.env.SWITCHBOT_TOKEN || "",
-        SWITCHBOT_SECRET_KEY: JSON.parse(process.env.APP_SECRETS || "{}").SWITCHBOT_SECRET_KEY || process.env.SWITCHBOT_SECRET_KEY || "",
-        SWITCHBOT_ENDPOINT: process.env.SWITCHBOT_ENDPOINT!,
-        SWITCHBOT_FUNCTION_DEVICEIDS_MAP: JSON.parse(process.env.APP_SECRETS || "{}").SWITCHBOT_FUNCTION_DEVICEIDS_MAP || process.env.SWITCHBOT_FUNCTION_DEVICEIDS_MAP || ""
+        SWITCHBOT_TOKEN: this.devCtlConfig.devCtlToken,
+        SWITCHBOT_SECRET_KEY: this.devCtlConfig.devCtlSecret,
+        SWITCHBOT_ENDPOINT: this.devCtlConfig.devCtlEndpoint,
+        SWITCHBOT_FUNCTION_DEVICEIDS_MAP: this.devCtlConfig.devCtlFunctionDeviceIdsMap,
       }
     });
 

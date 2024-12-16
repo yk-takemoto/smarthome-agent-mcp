@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import {
   LlmAdapter,
   TextToSpeechResponse,
-  MpcTool,
+  McpTool,
   ChatCompletionsOptions,
   ChatCompletionsResponse
 } from "./llm_adapter"
@@ -31,7 +31,7 @@ export class OpenAIAdapter<T extends OpenAI> implements LlmAdapter {
     }
   }
 
-  private convertTools(tools: MpcTool[]): OpenAI.ChatCompletionTool[] {
+  private convertTools(tools: McpTool[]): OpenAI.ChatCompletionTool[] {
     return tools.map(tool => {
       return {
         type: "function",

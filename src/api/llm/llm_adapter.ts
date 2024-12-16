@@ -18,7 +18,7 @@ export type TextToSpeechResponse = {
   content: Buffer;
 }
 
-export type MpcTool = {
+export type McpTool = {
   name: string;
   description: string;
   inputSchema: {

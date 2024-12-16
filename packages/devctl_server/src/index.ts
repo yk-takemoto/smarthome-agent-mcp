@@ -41,7 +41,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const functionToCall = devCtlFunctions[name];
     const functionOutput = functionToCall ? await functionToCall(args) : { error: `${name} is not available` };
     // debug
-    console.error("[mpcServer#CallToolRequestSchema] ", name, args, "function_output: ", functionOutput);
+    console.error("[mcpServer#CallToolRequestSchema] ", name, args, "function_output: ", functionOutput);
     return {
       content: [
         {

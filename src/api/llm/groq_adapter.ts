@@ -8,7 +8,7 @@ import {
 import {
   LlmAdapter,
   TextToSpeechResponse,
-  MpcTool,
+  McpTool,
   ChatCompletionsOptions,
   ChatCompletionsResponse
 } from "./llm_adapter"
@@ -35,7 +35,7 @@ export class GroqAdapter implements LlmAdapter {
     }
   }
 
-  private convertTools(tools: MpcTool[]): ChatCompletionTool[] {
+  private convertTools(tools: McpTool[]): ChatCompletionTool[] {
     return tools.map(tool => {
       return {
         type: "function",
