@@ -38,4 +38,3 @@ next-env.d.ts
 # for smarthome-agent app
 user.*.yaml
 org.yaml
-devctl.yaml

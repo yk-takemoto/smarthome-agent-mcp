@@ -1,6 +1,7 @@
 import * as crypto from "crypto";
 import * as uuid from "uuid";
-import { DeviceControlClient } from "../device_control_client";
+import { z } from "zod";
+import { DeviceControlFunction } from "./device_control_function.js";
 
 type DeviceIds = {
   main: string;
@@ -11,7 +12,7 @@ type FunctionsDeviceIds = {
   [functionId: string]: DeviceIds;
 }
 
-export abstract class SwitchbotControlClient implements DeviceControlClient {
+export abstract class SwitchbotControlFunction implements DeviceControlFunction {
   constructor(
     functionId: string,
     protected switchbotConfig = {
@@ -59,5 +60,21 @@ export abstract class SwitchbotControlClient implements DeviceControlClient {
     };
   }
 
-  abstract controlDevice(commandType: string, command: string | number): Promise<Record<string, string>>;
+  protected checkArgs(args: Record<string, any>): {
+    commandType: string;
+    command: string | number;
+  } {
+    const devCtlArgumentsSchema = z.object({
+      commandType: z.string(),
+      command: z.union([z.string(), z.number()]),
+    });
+
+    const convertedArgs = args ? Object.keys(args).reduce((acc, key) => {
+      acc[key === "commandType" ? key : "command"] = args[key];
+      return acc;
+    }, {} as Record<string, unknown>) : args;
+    return devCtlArgumentsSchema.parse(convertedArgs);
+  }
+
+  abstract controlDevice(args: Record<string, any>): Promise<Record<string, string>>;
 }

@@ -1,12 +1,13 @@
-import { SwitchbotControlClient } from "./switchbot_control_client"
+import { SwitchbotControlFunction } from "./switchbot_control_function.js"
 
-export class SwitchBotTVControlClient extends SwitchbotControlClient {
+export class SwitchBotTVControlFunction extends SwitchbotControlFunction {
   constructor(functionId: string) {
     super(functionId);
   }
 
-  async controlDevice(commandType: string, command: string | number): Promise<Record<string, string>> {
-    console.log(`[TVControlClient] command_type: ${commandType} command: ${command}`);
+  async controlDevice(args: Record<string, any>): Promise<Record<string, string>> {
+    console.error(`[TVControlClient] args: ${JSON.stringify(args)}`);
+    const { commandType, command } = this.checkArgs(args);
     const url = `${this.switchbotConfig.devCtlEndpoint}/v1.1/devices/${this.switchbotConfig.devIds.main}/commands`;
     const headers = this.getSwitchbotApiHeader();
 

@@ -1,5 +1,11 @@
 import OpenAI from "openai";
-import { LlmAdapter, FunctionCallingResponse, FunctionCallingOptions, TextToSpeechResponse } from "./llm_adapter"
+import {
+  LlmAdapter,
+  TextToSpeechResponse,
+  McpTool,
+  ChatCompletionsOptions,
+  ChatCompletionsResponse
+} from "./llm_adapter"
 
 export class OpenAIAdapter<T extends OpenAI> implements LlmAdapter {
 
@@ -25,97 +31,107 @@ export class OpenAIAdapter<T extends OpenAI> implements LlmAdapter {
     }
   }
 
-  async functionCalling(
-    functions: { [functionId: string]: Function },
-    systemPrompt: string[],
-    messages: string[],
-    options: FunctionCallingOptions
-  ): Promise<FunctionCallingResponse> {
+  private convertTools(tools: McpTool[]): OpenAI.ChatCompletionTool[] {
+    return tools.map(tool => {
+      return {
+        type: "function",
+        function: {
+          name: tool.name,
+          description: tool.description,
+          parameters: tool.inputSchema
+        }
+      };
+    });
+  }
 
-    const funcMessages: OpenAI.ChatCompletionMessageParam[] = [];
-    systemPrompt.forEach(msg => {
-      funcMessages.push({
-        role: "system",
-        content: msg,
+  async chatCompletions(
+    systemPrompt: string[],
+    firstMessages: string[],
+    options: ChatCompletionsOptions,
+    inProgress?: {
+      messages: OpenAI.ChatCompletionMessageParam[];
+      toolResults?: {
+        id: string;
+        content: string;
+      }[];
+    }
+  ): Promise<ChatCompletionsResponse> {
+
+    let updatedMessages: OpenAI.ChatCompletionMessageParam[] = [];
+    if (inProgress) {
+      const resMessages = inProgress.toolResults?.map(toolResult => {
+        return {
+          tool_call_id: toolResult.id,
+          role: "tool",
+          content: toolResult.content
+        } as OpenAI.ChatCompletionMessageParam;
+      }) || [];
+      updatedMessages = inProgress.messages.concat(resMessages);
+    } else {
+      systemPrompt.forEach(msg => {
+        updatedMessages.push({
+          role: "system",
+          content: msg,
+        });
       });
-    });
-    messages.forEach(msg => {
-      funcMessages.push({
-        role: "user",
-        content: msg,
+      firstMessages.forEach(msg => {
+        updatedMessages.push({
+          role: "user",
+          content: msg,
+        });
       });
-    });
-    const funcOtions = {
+    }
+    const chatOtions = {
       model: this.llmConfig.apiModelChat,
-      messages: funcMessages,
-      tools: options.tools as OpenAI.ChatCompletionTool[],
+      messages: updatedMessages,
+      tools: this.convertTools(options.tools),
       tool_choice: options.toolChoice || "auto" as OpenAI.ChatCompletionToolChoiceOption,
       max_tokens: options.maxTokens as number || 1028,
       temperature: options.temperature as number ?? 0.7,
       response_format: options.responseFormat,
     };
-    const response: FunctionCallingResponse = {
-      resAssistantMessage: "",
-      resToolMessages: []
+    let response: ChatCompletionsResponse = {
+      text: "",
+      tools: [],
+      messages: []
     };
     try {
 
       // debug
-      console.log("[functionCalling] chatCompletions start -- funcMessages: ", JSON.stringify(funcMessages));
-      const chatResponse = await this.openaiClient.chat.completions.create(funcOtions);
+      console.log("[chatCompletions] start -- updatedMessages: ", JSON.stringify(updatedMessages));
+      const chatResponse = await this.openaiClient.chat.completions.create(chatOtions);
       const choice = chatResponse.choices[0];
       const finishReason = choice.finish_reason;
       // debug
-      console.log(`[functionCalling] chatCompletions end -- choices[0].message: ${JSON.stringify(choice.message)} finishReason: ${finishReason}`);
+      console.log(`[chatCompletions] end -- choices[0].message: ${JSON.stringify(choice.message)} finishReason: ${finishReason}`);
   
-      if (finishReason !== "tool_calls") {
-        response.resAssistantMessage = choice.message?.content || "Sorry, there was no response from the agent.";
-        return response;
-      }
-      
+      let resTools: { id:string, name:string, arguments: Record<string, any> }[] = [];
       if (choice.message) {
-        const toolMessage = choice.message;
-        funcMessages.push(toolMessage);
-  
-        for (const toolCall of toolMessage?.tool_calls || []) {
-          const functionName = toolCall.function.name;
-          const functionToCall = functions[functionName];
-          const functionArgs = JSON.parse(toolCall.function.arguments);
-          const values = Object.values(functionArgs);
-          const functionOutput = functionToCall ? await functionToCall(...values) : {error: `${functionName} is not available`};
-          // debug
-          console.log("[functionCalling] ", functionName, functionArgs, "function_output: ", functionOutput);
-  
-          const content = { ...functionArgs, function_output: functionOutput };
-          const resToolMessage = {
-            content: JSON.stringify(content)
+        updatedMessages.push(choice.message);
+        resTools = (
+          finishReason === "tool_calls"
+        ) ? choice.message.tool_calls?.map(tool_call => {
+          return {
+            id: tool_call.id,
+            name: tool_call.function.name,
+            arguments: JSON.parse(tool_call.function.arguments) as Record<string, any>
           };
-          const toolResult = {
-            tool_call_id: toolCall.id,
-            role: "tool",
-            ...resToolMessage
-          };
-          funcMessages.push(toolResult as OpenAI.ChatCompletionMessageParam);
-          response.resToolMessages.push(resToolMessage);
-        }
-        // debug
-        console.log("[functionCalling] chatCompletions start -- funcMessages: ", JSON.stringify(funcMessages));
-        funcOtions.messages = funcMessages;
-        const nextChatResponse = await this.openaiClient.chat.completions.create(funcOtions);
-        response.resAssistantMessage = nextChatResponse.choices[0].message?.content || "Sorry, there was no response from the agent. If the following details are displayed, please check them.";
-        // debug
-        console.log(`[functionCalling] chatCompletions end -- choices[0].message?.content: ${response.resAssistantMessage}`);
-  
-        // funcMessages.push({ role: "assistant", content: response.resAssistantMessage });
+        }) || [] : [];
       }
+
+      response = {
+        text: choice.message?.content,
+        tools: resTools,
+        messages: updatedMessages
+      };
     } catch (error) {
       // debug
-      console.log("[functionCalling] Error: ", error);
+      console.log("[chatCompletions] Error: ", error);
       throw error;
     }
 
     // debug
-    console.log("[functionCalling] response: ", response);
+    console.log("[chatCompletions] response: ", response);
     return response;
   }
 

@@ -1,10 +1,14 @@
 import * as yaml from "js-yaml";
 import * as fs from "fs";
 import path from "path";
-import functionBuilder from "./func/function_builder";
+import functionBuilder from "./func/function_builder.js";
 
-const deviceControlMap = yaml.load(fs.readFileSync(path.resolve("devctl.yaml"), "utf-8")) as Record<string, string>;
-const deviceControlFunctions = () => {
+const deviceControlFunctions = (
+  devCtlServerRootPath: string = process.env.DEVCTL_SERVER_ROOTPATH!
+) => {
+  const deviceControlMap = yaml.load(
+    fs.readFileSync(path.resolve(devCtlServerRootPath, "devctl.yaml"), "utf-8")
+  ) as Record<string, string>;
   const functions: { [functionId: string]: Function } = {};
   for (const [functionId, className] of Object.entries(deviceControlMap)) {
     const deviceClient = functionBuilder(functionId, className);
