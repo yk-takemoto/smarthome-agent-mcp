@@ -6,7 +6,7 @@ export class SwitchBotTVControlFunction extends SwitchbotControlFunction {
   }
 
   async controlDevice(args: Record<string, any>): Promise<Record<string, string>> {
-    console.error(`[TVControlClient] args: ${JSON.stringify(args)}`);
+    console.error(`[TVControlFunction] args: ${JSON.stringify(args)}`);
     const { commandType, command } = this.checkArgs(args);
     const url = `${this.switchbotConfig.devCtlEndpoint}/v1.1/devices/${this.switchbotConfig.devIds.main}/commands`;
     const headers = this.getSwitchbotApiHeader();

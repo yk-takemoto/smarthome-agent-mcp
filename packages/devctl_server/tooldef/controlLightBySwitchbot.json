@@ -4,9 +4,9 @@
     "inputSchema": {
         "type": "object",
         "properties": {
-            "commandType": {
+            "commandTarget": {
                 "type": "string",
-                "description": "The Command target to control light. e.g. if target is 'living room' then commandType='main', else if target is 'next to the living room' then commandType='next', else commandType='other'"
+                "description": "The Command target to control light. e.g. if target is 'living room' then commandTarget='main', else if target is 'next to the living room' then commandTarget='next', else commandTarget='other'"
             },
             "commandTurning": {
                 "type": "string",
@@ -14,8 +14,7 @@
             }
         },
         "required": [
-            "commandType",
-            "command"
+            "commandTarget"
         ]
     }
 }

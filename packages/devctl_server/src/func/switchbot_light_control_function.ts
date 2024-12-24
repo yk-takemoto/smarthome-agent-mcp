@@ -11,16 +11,19 @@ export class SwitchBotLightControlFunction extends SwitchbotControlFunction {
   }
 
   async controlDevice(args: Record<string, any>): Promise<Record<string, string>> {
-    console.error(`[LightControlClient] args: ${JSON.stringify(args)}`);
-    const { commandType, command } = this.checkArgs(args);
+    console.error(`[LightControlFunction] args: ${JSON.stringify(args)}`);
+    const { commandTarget, command } = this.checkArgs(args);
 
     let deviceId: string;
-    if (commandType === "main") {
+    let roomName: string;
+    if (commandTarget === "main") {
       deviceId = this.switchbotConfig.devIds.main;
-    } else if (commandType === "next") {
-      deviceId = this.switchbotConfig.devIds[commandType];
+      roomName = "リビング";
+    } else if (commandTarget === "next") {
+      deviceId = this.switchbotConfig.devIds[commandTarget];
+      roomName = "リビングの隣の部屋";
     } else {
-      return { error: `commandTypeが不正です. commandType=${commandType}` };
+      return { error: `commandTypeが不正です. commandType=${commandTarget}` };
     }
 
     const sendCount = command === "turnOn" ? this.countOfTurnOn : command === "turnOff" ? this.countOfTurnOff : 0;
@@ -39,10 +42,10 @@ export class SwitchBotLightControlFunction extends SwitchbotControlFunction {
         }),
       });
       if (response.status !== 200) {
-        return { error: `${commandType}のライトを付けるのに失敗しました` };
+        return { error: `${roomName}のライトを付けるのに失敗しました` };
       }
     }
 
-    return { success: `${commandType}のライトを付けました` };
+    return { success: `${roomName}のライトを付けました` };
   }
 }

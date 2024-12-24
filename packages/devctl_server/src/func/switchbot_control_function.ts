@@ -42,7 +42,7 @@ export abstract class SwitchbotControlFunction implements DeviceControlFunction 
     }
   }
 
-  protected getSwitchbotApiHeader(): Record<string, string> {
+  protected getSwitchbotApiHeader(method: "GET" | "POST" = "POST"): Record<string, string> {
     const token = this.switchbotConfig.devCtlToken;
     const secret = this.switchbotConfig.devCtlSecret;
     const nonce = uuid.v4();
@@ -50,10 +50,15 @@ export abstract class SwitchbotControlFunction implements DeviceControlFunction 
     const stringToSign = `${token}${t}${nonce}`;
     const sign = crypto.createHmac("sha256", secret).update(stringToSign).digest("base64");
 
-    return {
+    return method === "POST" ? {
       Authorization: token,
       "Content-Type": "application/json",
       charset: "utf8",
+      t: t.toString(),
+      sign: sign,
+      nonce: nonce,
+    } : {
+      Authorization: token,
       t: t.toString(),
       sign: sign,
       nonce: nonce,
@@ -61,16 +66,18 @@ export abstract class SwitchbotControlFunction implements DeviceControlFunction 
   }
 
   protected checkArgs(args: Record<string, any>): {
-    commandType: string;
+    commandType?: string;
+    commandTarget?: string;
     command: string | number;
   } {
     const devCtlArgumentsSchema = z.object({
-      commandType: z.string(),
+      commandType: z.string().optional(),
+      commandTarget: z.string().optional(),
       command: z.union([z.string(), z.number()]),
     });
 
     const convertedArgs = args ? Object.keys(args).reduce((acc, key) => {
-      acc[key === "commandType" ? key : "command"] = args[key];
+      acc[key === "commandType" || key === "commandTarget" ? key : "command"] = args[key];
       return acc;
     }, {} as Record<string, unknown>) : args;
     return devCtlArgumentsSchema.parse(convertedArgs);
