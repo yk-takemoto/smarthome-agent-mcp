@@ -1,11 +1,13 @@
 import { DeviceControlFunction } from "./device_control_function.js";
 import { SwitchBotTVControlFunction } from "./switchbot_tv_control_function.js";
 import { SwitchBotLightControlFunction } from "./switchbot_light_control_function.js";
+import { SwitchBotAirconControlFunction } from "./switchbot_aircon_control_function.js";
 
 type DeviceControlFunctionConstructor = new (...args: any[]) => DeviceControlFunction;
 const functionClasses: Record<string, DeviceControlFunctionConstructor> = {
   SwitchBotTVControlFunction,
-  SwitchBotLightControlFunction
+  SwitchBotLightControlFunction,
+  SwitchBotAirconControlFunction
 };
 
 const functionBuilder = (functionId: string, className: string): DeviceControlFunction => {
