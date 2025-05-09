@@ -94,7 +94,7 @@ export default async function handler(
     }
 
     const nextChatResponse = await llmAdapter.chatCompletions(
-      [],
+      [systemPrompt],
       [],
       options,
       {

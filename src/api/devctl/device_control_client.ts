@@ -17,6 +17,7 @@ export class DeviceControlClient {
       devCtlEndpoint: process.env.SWITCHBOT_ENDPOINT || "",
       devCtlFunctionDeviceIdsMap: JSON.parse(process.env.APP_SECRETS || "{}").SWITCHBOT_FUNCTION_DEVICEIDS_MAP || process.env.SWITCHBOT_FUNCTION_DEVICEIDS_MAP || ""
     },
+    private nodeExtraCaCerts = process.env.NODE_EXTRA_CA_CERTS || ""
   ) {
     this.initCheck(devCtlConfig);
 
@@ -31,6 +32,7 @@ export class DeviceControlClient {
         SWITCHBOT_SECRET_KEY: this.devCtlConfig.devCtlSecret,
         SWITCHBOT_ENDPOINT: this.devCtlConfig.devCtlEndpoint,
         SWITCHBOT_FUNCTION_DEVICEIDS_MAP: this.devCtlConfig.devCtlFunctionDeviceIdsMap,
+        ...(this.nodeExtraCaCerts ? { NODE_EXTRA_CA_CERTS: this.nodeExtraCaCerts } : {})
       }
     });
 

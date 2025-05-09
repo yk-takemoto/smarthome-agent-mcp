@@ -5,6 +5,7 @@ localtest-home:
     - OpenAI: "OpenAI"
     - AzureOpenAI: "Azure OpenAI"
     - Anthropic: "Anthropic(Claude)"
+    - Google: "Google(Gemini)"
     - Groq: "Groq"
   translate_apis:
     - DeepL: "DeepL"
@@ -16,6 +17,7 @@ prodtest-home:
     - OpenAI: "OpenAI"
     - AzureOpenAI: "Azure OpenAI"
     - Anthropic: "Anthropic(Claude)"
+    - Google: "Google(Gemini)"
     - Groq: "Groq"
   translate_apis:
     - DeepL: "DeepL"
