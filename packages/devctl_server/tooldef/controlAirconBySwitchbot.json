@@ -1,0 +1,36 @@
+{
+    "name": "controlAirconBySwitchbot",
+    "description": "Control air conditioner given command by Switchbot.",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "commandTarget": {
+                "type": "string",
+                "description": "The Command target to control air conditioner. e.g. if target is 'living room' then commandTarget='main', else if target is 'work room' then commandTarget='work', else if target is 'bed room' then commandTarget='bed', else commandTarget='other'"
+            },"commandType": {
+                "type": "string",
+                "description": "The Command type to control air conditioner. e.g. 'power', 'mode', 'tempset', 'tempchange'"
+            },
+            "commandOfPowerturning": {
+                "type": "string",
+                "description": "The Command to send power On/Off. e.g. 'turnOn', 'turnOff'"
+            },
+            "commandOfModechange": {
+                "type": "string",
+                "description": "The Command to change mode. e.g. '2:cool', '3:dry', '3:dehumidification', '5:heat'"
+            },
+            "commandOfTempset": {
+                "type": "integer",
+                "description": "The Command to set the temperature from 22 to 28."
+            },
+            "commandOfTempchange": {
+                "type": "integer",
+                "description": "The Command to change the temperature from -3 to 3."
+            }
+        },
+        "required": [
+            "commandTarget",
+            "commandType"
+        ]
+    }
+}
