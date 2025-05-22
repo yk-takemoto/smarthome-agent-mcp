@@ -1,71 +1,39 @@
 #!/usr/bin/env node
 
-import "reflect-metadata";
 import dotenv from "dotenv";
-import * as fs from "fs";
-import path from "path";
-import yaml from "js-yaml";
-import { container } from "tsyringe";
 import { z } from "zod";
 import express from "express";
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { createContexts, serverConfigSchema } from "@yk-takemoto/mcp-handler";
-import { SwitchBotTVControlFunction, SwitchBotLightControlFunction, SwitchBotAirconControlFunction } from "./functions/index.js";
-import { devctlTools } from "./tools/index.js";
-
-container.register("SwitchBotTVControlFunction", {
-  useClass: SwitchBotTVControlFunction,
-});
-container.register("SwitchBotLightControlFunction", {
-  useClass: SwitchBotLightControlFunction,
-});
-container.register("SwitchBotAirconControlFunction", {
-  useClass: SwitchBotAirconControlFunction,
-});
+import {
+  tvControlArgsSchemaObject,
+  SwitchBotTVControlFunction,
+  lightControlArgsSchemaObject,
+  SwitchBotLightControlFunction,
+  airconControlArgsSchemaObject,
+  SwitchBotAirconControlFunction,
+} from "./tools/index.js";
 
 dotenv.config();
-const getConfig = (serverRootPath: string = process.env.MCPSERVER_ROOTPATH!) => {
-  const config = yaml.load(fs.readFileSync(path.resolve(serverRootPath, "config.yaml"), "utf-8"));
-  return serverConfigSchema.parse(config);
-};
-const serverContexts = createContexts(getConfig());
-const functions = serverContexts.devctl.function;
 
-let stdioServer: Server;
+let stdioServer: McpServer;
 
 // Create server instance
 const getServer = () => {
-  const server = new Server(
-    {
-      name: "smarthome-agent_server",
-      version: "0.1.0",
-    },
-    {
-      capabilities: {
-        tools: {},
-      },
-    },
-  );
-
-  // List available tools
-  server.setRequestHandler(ListToolsRequestSchema, async () => {
-    return {
-      tools: [...devctlTools],
-    };
+  const server = new McpServer({
+    name: "smarthome-agent_server",
+    version: "0.1.0",
   });
 
-  // Handle tool execution
-  server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    const { name, arguments: args } = request.params;
-
+  // TV
+  server.tool("tv", "The Tool to control TV", tvControlArgsSchemaObject, async (args) => {
     try {
-      const functionToCall = functions[name];
-      const toolResult = functionToCall ? await functionToCall(args) : { error: `${name} is not available` };
       // debug
-      console.error(`[mcpServer#CallToolRequestSchema] name: ${name}, args: ${args}, "toolResult: ${toolResult}`);
+      console.error(`[mcpServer#callback] name: tv, args: ${JSON.stringify(args)}`);
+      const toolResult = await new SwitchBotTVControlFunction("tv").execute(args);
+      // debug
+      console.error(`[mcpServer#callback] toolResult: ${toolResult}`);
       return {
         content: [
           {
@@ -81,6 +49,55 @@ const getServer = () => {
       throw error;
     }
   });
+
+  // Light
+  server.tool("light", "The Tool to control light", lightControlArgsSchemaObject, async (args) => {
+    try {
+      // debug
+      console.error(`[mcpServer#callback] name: light, args: ${JSON.stringify(args)}`);
+      const toolResult = await new SwitchBotLightControlFunction("light").execute(args);
+      // debug
+      console.error(`[mcpServer#callback] toolResult: ${toolResult}`);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ args, toolResult }),
+          },
+        ],
+      };
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        throw new Error(`Invalid arguments: ${error.errors.map((e) => `${e.path.join(".")}: ${e.message}`).join(", ")}`);
+      }
+      throw error;
+    }
+  });
+
+  // Aircon
+  server.tool("aircon", "The Tool to control air conditioner", airconControlArgsSchemaObject, async (args) => {
+    try {
+      // debug
+      console.error(`[mcpServer#callback] name: aircon, args: ${JSON.stringify(args)}`);
+      const toolResult = await new SwitchBotAirconControlFunction("aircon").execute(args);
+      // debug
+      console.error(`[mcpServer#callback] toolResult: ${toolResult}`);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ args, toolResult }),
+          },
+        ],
+      };
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        throw new Error(`Invalid arguments: ${error.errors.map((e) => `${e.path.join(".")}: ${e.message}`).join(", ")}`);
+      }
+      throw error;
+    }
+  });
+
   return server;
 };
 

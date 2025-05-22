@@ -19,11 +19,11 @@ const testToolDataList: { [k: string]: { name: string; argPattern: any[] } } = {
       },
       {
         commandType: "channel",
-        commandOfChannelsetting: "1",
+        commandOfChannelsetting: 1,
       },
       {
         commandType: "volume",
-        commandOfVolumechange: "1",
+        commandOfVolumechange: 1,
       },
     ],
   },
@@ -155,6 +155,7 @@ async function main() {
           for (const tool of tools) {
             console.log(`Tool Name: ${tool.name}`);
             console.log(`Tool Description: ${tool.description}`);
+            console.log(`Tool inputSchema: ${JSON.stringify(tool.inputSchema, null, 2)}`);
             console.log("------------------------------");
           }
         }

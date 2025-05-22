@@ -33,19 +33,13 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.11.1",
     "@yk-takemoto/error-handler": "github:yk-takemoto/error-handler-ts#main",
-    "@yk-takemoto/mcp-handler": "github:yk-takemoto/mcp-handler-ts#main",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
-    "js-yaml": "^4.1.0",
-    "reflect-metadata": "^0.2.2",
-    "tsyringe": "^4.8.0",
     "uuid": "^11.0.3",
-    "zod": "^3.24.1",
-    "zod-to-json-schema": "^3.24.1"
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.1",
-    "@types/js-yaml": "^4.0.9",
     "@types/node": "^18.18.0",
     "@types/uuid": "^10.0.0",
     "eslint": "^9.18.0",
