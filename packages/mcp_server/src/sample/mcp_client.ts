@@ -8,6 +8,7 @@ import { createInterface } from "readline/promises";
 dotenv.config();
 let client: Client;
 let transport: StdioClientTransport | StreamableHTTPClientTransport;
+let sessionId: string | undefined;
 
 const testToolDataList: { [k: string]: { name: string; argPattern: any[] } } = {
   tv: {
@@ -78,9 +79,9 @@ const getStdioClientTransport = () => {
   });
 };
 
-const getStreamableHTTPServerTransport = () => {
+const getStreamableHTTPServerTransport = (answer: string) => {
   return new StreamableHTTPClientTransport(new URL("http://localhost:3100/mcp"), {
-    sessionId: undefined,
+    sessionId: answer === "streamable-http" ? sessionId : undefined,
   });
 };
 
@@ -129,24 +130,32 @@ async function main() {
 
   console.log("Select transport:");
   console.log("streamable-http");
+  console.log("streamable-http-stateless");
   console.log("else. stdio");
   console.log("------------------------------");
 
   const answer = await readline.question("Enter your input: ");
 
-  transport = answer === "streamable-http" ? getStreamableHTTPServerTransport() : getStdioClientTransport();
+  transport = answer === "streamable-http" || answer === "streamable-http-stateless" ? getStreamableHTTPServerTransport(answer) : getStdioClientTransport();
   await client.connect(transport);
+  if (transport instanceof StreamableHTTPClientTransport && answer === "streamable-http") {
+    sessionId = transport.sessionId;
+    console.log("Connected to server with session ID:", sessionId);
+  }
 
   while (true) {
     console.log("Avaible commands:");
     console.log("list-tools");
     console.log("call-tool");
+    if (answer === "streamable-http") {
+      console.log("terminate-session");
+    }
     console.log("exit");
     console.log("------------------------------");
 
-    const answer = await readline.question("Enter your input: ");
+    const answer2 = await readline.question("Enter your input: ");
 
-    switch (answer) {
+    switch (answer2) {
       case "list-tools": {
         const tools = await listTools();
         if (tools.length === 0) {
@@ -173,9 +182,9 @@ async function main() {
         });
         console.log("------------------------------");
 
-        const answer = await readline.question("Enter your input: ");
+        const answer3 = await readline.question("Enter your input: ");
 
-        const testData = testToolDataList[answer];
+        const testData = testToolDataList[answer3];
 
         console.log("Select tool argPattern:");
         testData.argPattern.forEach((arg, index) => {
@@ -183,9 +192,9 @@ async function main() {
         });
         console.log("------------------------------");
 
-        const answer2 = await readline.question("Enter your input: ");
+        const answer4 = await readline.question("Enter your input: ");
 
-        const argPattern = testData.argPattern[Number(answer2) - 1];
+        const argPattern = testData.argPattern[Number(answer4) - 1];
         if (!argPattern) {
           console.log("Invalid argPattern selected.");
           break;
@@ -201,13 +210,36 @@ async function main() {
         await callTool(tool);
         break;
       }
+      case "terminate-session":
+        await terminateSession();
+        break;
       case "exit":
         await disconnect();
         return;
       default:
-        console.log("You entered:", answer);
+        console.log("You entered:", answer2);
         break;
     }
+  }
+}
+
+async function terminateSession() {
+  if (!transport) {
+    console.log("No active transport to terminate.");
+    return;
+  }
+  if (transport instanceof StdioClientTransport) {
+    console.log("Stdio transport does not support session termination.");
+    return;
+  }
+  await transport.terminateSession();
+  console.log("Session terminated.");
+
+  if (!transport.sessionId) {
+    console.log("Session ID:", transport.sessionId);
+    sessionId = undefined;
+  } else {
+    console.log("Session ID not available. Unable to terminate session.");
   }
 }
 
