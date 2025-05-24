@@ -1,12 +1,12 @@
 {
   "mcpServers": {
-    "devctl_server": {
+    "smarthome-agent_mcp_server": {
       "command": "/path/to/node",
       "args": [
         "/path/to/server/root/build/index.js"
       ],
       "env": {
-        "DEVCTL_SERVER_ROOTPATH": "/path/to/server/root",
+        "MCPSERVER_ROOTPATH": "/path/to/server/root",
         "SWITCHBOT_ENDPOINT": "https://api.switch-bot.com",
         "SWITCHBOT_TOKEN": "<token>",
         "SWITCHBOT_SECRET_KEY": "<secret>",
