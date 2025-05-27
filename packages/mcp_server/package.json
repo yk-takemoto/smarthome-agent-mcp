@@ -16,9 +16,11 @@
     "test": "node --test -r tsconfig-paths/register --require ts-node/register ./tests/**/test_*.ts",
     "compile": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
     "build": "yarn format && yarn lint && yarn compile",
-    "watch": "tsc --watch",
+    "fullb": "yarn format && yarn lint && yarn test && yarn compile",
+    "start": "npx tsx src/index.ts",
+    "dev": "npx tsx --inspect src/index.ts",
     "inspector": "yarn dlx @modelcontextprotocol/inspector build/index.js",
-    "full": "yarn format && yarn lint && yarn test && yarn compile"
+    "full": "yarn fullb && yarn start"
   },
   "repository": {
     "type": "git",

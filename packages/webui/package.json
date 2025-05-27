@@ -1,0 +1,56 @@
+{
+  "name": "@smarthome-agent-mcp/webui",
+  "version": "0.1.0",
+  "description": "Web UI for smarthome-agent using Next.js",
+  "private": true,
+  "scripts": {
+    "format": "prettier --write '{src,tests}/**/*.ts'",
+    "lint": "next lint",
+    "compile": "next build",
+    "build": "yarn format && yarn lint && yarn compile",
+    "start": "next start",
+    "dev": "next dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yk-takemoto/smarthome-agent-mcp"
+  },
+  "author": "Yukihiro Takemoto",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yk-takemoto/smarthome-agent-mcp/issues"
+  },
+  "homepage": "https://github.com/yk-takemoto/smarthome-agent-mcp#readme",
+  "dependencies": {
+    "@emotion/react": "^11.11.4",
+    "@emotion/server": "^11.11.0",
+    "@emotion/styled": "^11.11.5",
+    "@modelcontextprotocol/sdk": "^1.11.1",
+    "@mui/icons-material": "^5.16.1",
+    "@mui/material": "^5.16.1",
+    "@yk-takemoto/account-manager": "github:yk-takemoto/account-manager-ts#main",
+    "@yk-takemoto/error-handler": "github:yk-takemoto/error-handler-ts#main",
+    "@yk-takemoto/llm-adapter": "github:yk-takemoto/llm-adapter-ts#main",
+    "@yk-takemoto/translate-adapter": "github:yk-takemoto/translate-adapter-ts#main",
+    "js-yaml": "^4.1.0",
+    "jwt-decode": "^4.0.0",
+    "next": "14.2.5",
+    "next-auth": "^4.24.10",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-speech-recognition": "^3.10.0",
+    "regenerator-runtime": "^0.14.1",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@types/react-speech-recognition": "^3.9.5",
+    "@types/uuid": "^10.0.0",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.5",
+    "typescript": "^5"
+  }
+}
