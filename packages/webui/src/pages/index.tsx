@@ -21,7 +21,7 @@ const ChatApp = () => {
   const audioPlayerRef = useRef<HTMLAudioElement>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const { transcript, resetTranscript } = useSpeechRecognition();
-  const { accountInfo, selectedLlmId, selectedTranslateId } = useAccountSettings();
+  const { accountInfo, selectedLlmId, selectedTranslateId, tools } = useAccountSettings();
 
   useEffect(() => {
     if (bottomRef.current) {
@@ -39,6 +39,7 @@ const ChatApp = () => {
       try {
         const resChatResponse = await chat.requestOperation(
           accountInfo,
+          tools,
           message,
           selectedLlmId,
           selectedTranslateId

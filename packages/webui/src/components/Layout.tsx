@@ -1,4 +1,4 @@
-import React, { ReactNode, useState, useEffect, useCallback, useRef } from "react";
+import React, { ReactNode, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { useSession, signIn, signOut } from "next-auth/react";
 import {
@@ -25,6 +25,7 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useAccountSettings } from "@/contexts/account_settings_context";
 import * as account from "@/services/account";
+import * as chat from "@/services/chat";
 
 export const Layout = ({ children }: { children: ReactNode }) => {
   const { data: session, status, update } = useSession();
@@ -33,7 +34,8 @@ export const Layout = ({ children }: { children: ReactNode }) => {
   const {
     accountInfo, setAccountInfo,
     selectedLlmId, setSelectedLlmId,
-    selectedTranslateId, setSelectedTranslateId
+    selectedTranslateId, setSelectedTranslateId,
+    setTools
   } = useAccountSettings();
   
   const router = useRouter();
@@ -43,17 +45,19 @@ export const Layout = ({ children }: { children: ReactNode }) => {
       return;
     }
     try {
-      const res = await account.getAccountInfo(
+      const accountRes = await account.getAccountInfo(
         session.authedUserId, 
         session.oidcTokenInfo?.accessToken
       );
-      setAccountInfo(res);
+      setAccountInfo(accountRes);
       if (!selectedLlmId) {
-        setSelectedLlmId(session.selectedLlmId || Object.keys(res.llmList[0])[0] || "");
+        setSelectedLlmId(session.selectedLlmId || Object.keys(accountRes.llmList[0])[0] || "");
       }
       if (!selectedTranslateId) {
         setSelectedTranslateId(session.selectedTranslateId || "None");
       }
+      const toolsRes = await chat.initialize(accountRes);
+      setTools(toolsRes);
     } catch (error) {
       console.error("Failed to fetch account info:", error);
     }
@@ -62,6 +66,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
     accountInfo, setAccountInfo,
     selectedLlmId, setSelectedLlmId,
     selectedTranslateId, setSelectedTranslateId
+    , setTools
   ]);
 
   useEffect(() => {
@@ -75,7 +80,11 @@ export const Layout = ({ children }: { children: ReactNode }) => {
     updateAccountInfo();
   }, [status, session, updateAccountInfo]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (!session || !accountInfo) {
+      return;
+    }
+    await chat.terminate(accountInfo);
     signOut();
   };
 

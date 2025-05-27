@@ -26,9 +26,13 @@ export default async function handler(
   if (!orgId) {
     return res.status(400).json(errorHandler("No orgId provided"));
   }
-  const { userId, requestMessage, requestLlmId, requestTranslateId } = req.body;
+  const { userId, tools, requestMessage, requestLlmId, requestTranslateId } =
+    req.body;
   if (!userId) {
     return res.status(400).json(errorHandler("No userId provided"));
+  }
+  if (!tools || !Array.isArray(tools)) {
+    return res.status(400).json(errorHandler("Invalid tools provided"));
   }
   if (!requestMessage) {
     return res.status(400).json(errorHandler("No requestMessage provided"));
@@ -56,7 +60,7 @@ export default async function handler(
         " The user will make requests in English, including the device names, but the assistant will respond in Japanese.";
     }
 
-    const tools = await mcpClient.listTools();
+    // const tools = await mcpClient.listTools(userId);
 
     const options = {
       maxTokens: 1028,
@@ -83,7 +87,7 @@ export default async function handler(
     }[] = [];
     for (const tool of chatResponse.tools) {
       try {
-        const resObj = await mcpClient.callTool(tool);
+        const resObj = await mcpClient.callTool({ userId, tool });
         resToolMessage = {
           content: resObj[0].text as string,
         };

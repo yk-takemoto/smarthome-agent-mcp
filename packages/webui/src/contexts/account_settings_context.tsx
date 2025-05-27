@@ -9,6 +9,8 @@ export type AccountSettingsContextType = {
   setSelectedLlmId: (selectedLlmId: string) => void;
   selectedTranslateId: string;
   setSelectedTranslateId: (selectedTranslateId: string) => void;
+  tools: any[];
+  setTools: (tools: any[]) => void;
 };
 
 const AccountSettingsContext = createContext<AccountSettingsContextType | undefined>(undefined);
@@ -26,6 +28,7 @@ export const AccountSettingsProvider = ({ children }: { children: ReactNode }) =
   const [accountInfo, setAccountInfo] = useState<AccountInfo | null>(null);
   const [selectedLlmId, setSelectedLlmId] = useState(session?.selectedLlmId || "");
   const [selectedTranslateId, setSelectedTranslateId] = useState(session?.selectedTranslateId || "");
+  const [tools, setTools] = useState<any[]>([]);
   return (
     <AccountSettingsContext.Provider value={{
       accountInfo,
@@ -34,6 +37,8 @@ export const AccountSettingsProvider = ({ children }: { children: ReactNode }) =
       setSelectedLlmId,
       selectedTranslateId,
       setSelectedTranslateId,
+      tools,
+      setTools,
       }}>
       {children}
     </AccountSettingsContext.Provider>
