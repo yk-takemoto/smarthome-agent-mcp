@@ -1,8 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { errorHandler } from "@/api/error";
+import { errorHandler } from "@yk-takemoto/error-handler";
+import { llmAdapterBuilder } from "@yk-takemoto/llm-adapter";
+import { translateAdapterBuilder } from "@yk-takemoto/translate-adapter";
 import * as mcpClient from "../_clients/mcp_client";
-import { llmAdapterBuilder } from "@/api/llm";
-import { translateAdapterBuilder } from "@/api/translate";
 
 type ChatResponse = {
   resAssistantMessage: string;
@@ -60,16 +60,21 @@ export default async function handler(
         " The user will make requests in English, including the device names, but the assistant will respond in Japanese.";
     }
 
-    // const tools = await mcpClient.listTools(userId);
-
     const options = {
-      maxTokens: 1028,
       tools: tools,
-      toolChoice: "auto",
+      toolOption: {
+        type: "function" as const,
+        choice: "auto",
+        maxTokens: 1028,
+      },
     };
     const chatResponse = await llmAdapter.chatCompletions(
       [systemPrompt],
-      [translatedMessage || requestMessage],
+      [
+        {
+          text: translatedMessage || requestMessage,
+        },
+      ],
       options,
     );
 
@@ -81,7 +86,7 @@ export default async function handler(
 
     const resToolMessages: any[] = [];
     let resToolMessage = { content: "{}" };
-    const toolResults: {
+    const toolResForNextChat: {
       id: string;
       content: string;
     }[] = [];
@@ -101,7 +106,7 @@ export default async function handler(
           ),
         };
       } finally {
-        toolResults.push({
+        toolResForNextChat.push({
           id: tool.id,
           ...resToolMessage,
         });
@@ -115,7 +120,7 @@ export default async function handler(
       options,
       {
         messages: chatResponse.messages,
-        toolResults: toolResults,
+        toolResults: toolResForNextChat,
       },
     );
 
@@ -123,7 +128,7 @@ export default async function handler(
       resAssistantMessage:
         nextChatResponse.text ||
         "Sorry, there was no response from the agent. If the following details are displayed, please check them.",
-      resToolMessages: resToolMessages,
+      resToolMessages,
     };
     res.status(200).json(response);
   } catch (error) {

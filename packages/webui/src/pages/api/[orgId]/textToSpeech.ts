@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { errorHandler } from "@/api/error";
-import { llmAdapterBuilder } from "@/api/llm";
+import { errorHandler } from "@yk-takemoto/error-handler";
+import { llmAdapterBuilder } from "@yk-takemoto/llm-adapter";
 
 export default async function handler(
   req: NextApiRequest,

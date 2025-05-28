@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { errorHandler } from "@/api/error";
+import { errorHandler } from "@yk-takemoto/error-handler";
 import * as mcpClient from "../_clients/mcp_client";
 
 export default async function handler(
