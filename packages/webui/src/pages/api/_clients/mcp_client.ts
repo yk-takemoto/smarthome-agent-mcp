@@ -14,7 +14,7 @@ export const getSessionId = async (userId?: string): Promise<string | null> => {
   }
 };
 
-export const terminateSession = async (userId?: string): Promise<void> => {
+export const terminateSession = async (userId: string): Promise<void> => {
   try {
     await mcpClientManager.terminateSession(userId);
   } catch (error) {

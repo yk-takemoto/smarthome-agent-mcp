@@ -3,7 +3,7 @@ import path from "path";
 import yaml from "js-yaml";
 import { AuthFunctionServer } from "@yk-takemoto/account-manager";
 
-const createAuthServer = () => {
+const createAuthServer = async () => {
   try {
     const databaseType = process.env.AUTHSERVER_DATABASE_TYPE || "local";
     if (databaseType === "local") {

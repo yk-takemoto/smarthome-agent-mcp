@@ -4,7 +4,7 @@ import CognitoProvider from "next-auth/providers/cognito";
 import { OidcTokenInfo } from "@/types/next-auth";
 import { authConfig, createAuthServer } from "./_config";
 
-const authServer = createAuthServer();
+const authServer = await createAuthServer();
 
 const authOptions: AuthOptions =
   authServer.accountEnv === "local"
