@@ -19,7 +19,7 @@ export default async function handler(
   }
 
   try {
-    const authServer = createAuthServer();
+    const authServer = await createAuthServer();
     const resObj = await authServer.getAccountInfo({ userId, accessToken });
     res.status(200).json(resObj);
   } catch (error) {

@@ -206,15 +206,15 @@ class McpClientManager {
     return session;
   }
 
-  async terminateSession(userId: string = ""): Promise<void> {
-    const session = this.isStatefull()
-      ? this.statefullSessions.get(userId)
-      : this.session;
+  async terminateSession(userId: string): Promise<void> {
+    if (!this.isStatefull()) {
+      return;
+    }
+    const session = this.statefullSessions.get(userId);
     if (!session) {
       return;
     }
-
-    if (session.transport instanceof StreamableHTTPClientTransport && userId) {
+    if (session.transport instanceof StreamableHTTPClientTransport) {
       try {
         await session.transport.terminateSession();
         // debug
@@ -230,8 +230,6 @@ class McpClientManager {
       }
       await session.close();
       this.statefullSessions.delete(userId);
-    } else {
-      await session.close();
     }
   }
 
