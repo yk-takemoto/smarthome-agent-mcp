@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { errorHandler } from "@yk-takemoto/error-handler";
-import { llmAdapterBuilder } from "@yk-takemoto/llm-adapter";
+import { llmAdapterHelper } from "@yk-takemoto/llm-adapter";
 
 export default async function handler(
   req: NextApiRequest,
@@ -28,8 +28,13 @@ export default async function handler(
   const llmId = requestLlmId || "AzureOpenAI";
   const options = responseFormat ? { responseFormat } : {};
   try {
-    const llmAdapter = llmAdapterBuilder(llmId);
-    const resObj = await llmAdapter.textToSpeech(requestMessage, options);
+    const llmHelper = llmAdapterHelper({ llmId });
+    const resObj = await llmHelper.textToSpeech({
+      args: {
+        message: requestMessage,
+        options,
+      },
+    });
     res.setHeader("Content-Type", resObj.contentType);
     res.status(200).send(resObj.content);
   } catch (error) {
