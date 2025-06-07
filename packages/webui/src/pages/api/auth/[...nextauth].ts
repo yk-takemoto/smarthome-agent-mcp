@@ -29,16 +29,21 @@ const authOptions: AuthOptions =
           }),
         ],
         callbacks: {
-          async jwt({ token, user, account }) {
+          async jwt({ token, user, session }) {
             // debug
             // console.log("callbacks.jwt token: ", token);
             // console.log("callbacks.jwt user: ", user);
             // console.log("callbacks.jwt account: ", account);
             //
             if (user) {
-              token = { ...token, authedUserId: user.id };
+              token.authedUserId = user.id;
             }
-            //
+            if (session?.selectedLlmId) {
+              token.selectedLlmId = session.selectedLlmId;
+            }
+            if (session?.selectedTranslateId) {
+              token.selectedTranslateId = session.selectedTranslateId;
+            }
             return token;
           },
           async session({ session, token }) {
@@ -47,6 +52,8 @@ const authOptions: AuthOptions =
             // console.log("callbacks.session token: ", token);
             //
             session.authedUserId = token.authedUserId;
+            session.selectedLlmId = token.selectedLlmId;
+            session.selectedTranslateId = token.selectedTranslateId;
             return session;
           },
         },
