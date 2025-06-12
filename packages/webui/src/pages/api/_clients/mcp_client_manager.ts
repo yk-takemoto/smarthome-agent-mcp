@@ -179,9 +179,6 @@ class McpClientManager {
         `[McpClientManager#createSession] Created new session for user: ${userId}`,
       );
     } else {
-      if (this.session) {
-        await this.session.close();
-      }
       resSession = new ClientSession(client, transport);
       this.session = resSession;
     }

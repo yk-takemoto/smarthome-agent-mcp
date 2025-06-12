@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { errorHandler } from "@yk-takemoto/error-handler";
-import { llmAdapterBuilder } from "@yk-takemoto/llm-adapter";
-import { translateAdapterBuilder } from "@yk-takemoto/translate-adapter";
+import { llmAdapterHelper } from "@yk-takemoto/llm-adapter";
+import { translateAdapterHelper } from "@yk-takemoto/translate-adapter";
 import * as mcpClient from "../_clients/mcp_client";
 
 type ChatResponse = {
@@ -45,17 +45,19 @@ export default async function handler(
     resToolMessages: [],
   };
   try {
-    const llmAdapter = llmAdapterBuilder(llmId);
+    const llmHelper = llmAdapterHelper({ llmId });
 
     let translatedMessage;
     let systemPrompt =
       "You are a smart home agent that can control devices in the home.";
     if (translateId !== "None") {
-      const translateAdapter = translateAdapterBuilder(translateId);
-      translatedMessage = await translateAdapter.translateText(
-        requestMessage,
-        "en-US",
-      );
+      const translatHelper = translateAdapterHelper({ translateId });
+      translatedMessage = await translatHelper.translateText({
+        args: {
+          sourceText: requestMessage,
+          targetLang: "en-US",
+        },
+      });
       systemPrompt +=
         " The user will make requests in English, including the device names, but the assistant will respond in Japanese.";
     }
@@ -68,15 +70,17 @@ export default async function handler(
         maxTokens: 1028,
       },
     };
-    const chatResponse = await llmAdapter.chatCompletions(
-      [systemPrompt],
-      [
-        {
-          text: translatedMessage || requestMessage,
-        },
-      ],
-      options,
-    );
+    const chatResponse = await llmHelper.chatCompletions({
+      args: {
+        systemPrompt: [systemPrompt],
+        newMessageContents: [
+          {
+            text: translatedMessage || requestMessage,
+          },
+        ],
+        options,
+      },
+    });
 
     if (chatResponse.tools.length === 0) {
       response.resAssistantMessage =
@@ -114,15 +118,17 @@ export default async function handler(
       }
     }
 
-    const nextChatResponse = await llmAdapter.chatCompletions(
-      [systemPrompt],
-      [],
-      options,
-      {
-        messages: chatResponse.messages,
-        toolResults: toolResForNextChat,
+    const nextChatResponse = await llmHelper.chatCompletions({
+      args: {
+        systemPrompt: [systemPrompt],
+        newMessageContents: [],
+        options,
+        inProgress: {
+          messages: chatResponse.messages,
+          toolResults: toolResForNextChat,
+        },
       },
-    );
+    });
 
     response = {
       resAssistantMessage:

@@ -7,8 +7,20 @@
     "format": "yarn workspaces run format",
     "lint": "yarn workspaces run lint",
     "build": "yarn workspaces run build",
-    "start": "yarn workspaces run start",
-    "dev": "yarn workspaces run dev"
+    "start": "node scripts/start-server.mjs start default all",
+    "start:http": "node scripts/start-server.mjs start http all",
+    "start:http-stateless": "node scripts/start-server.mjs start http-stateless all",
+    "mcp_server:start:http": "node scripts/start-server.mjs start http mcp_server",
+    "mcp_server:start:http-stateless": "node scripts/start-server.mjs start http-stateless mcp_server",
+    "webui:start:http": "node scripts/start-server.mjs start http webui",
+    "webui:start:http-stateless": "node scripts/start-server.mjs start http-stateless webui",
+    "dev": "node scripts/start-server.mjs dev default all",
+    "dev:http": "node scripts/start-server.mjs dev http all",
+    "dev:http-stateless": "node scripts/start-server.mjs dev http-stateless all",
+    "mcp_server:dev:http": "node scripts/start-server.mjs dev http mcp_server",
+    "mcp_server:dev:http-stateless": "node scripts/start-server.mjs dev http-stateless mcp_server",
+    "webui:dev:http": "node scripts/start-server.mjs start dev webui",
+    "webui:dev:http-stateless": "node scripts/start-server.mjs dev http-stateless webui"
   },
   "workspaces": [
     "packages/mcp_server",
@@ -26,6 +38,7 @@
   "homepage": "https://github.com/yk-takemoto/smarthome-agent-mcp#readme",
   "devDependencies": {
     "@types/node": "^20",
+    "concurrently": "^9.1.2",
     "eslint": "^8",
     "eslint-config-next": "14.2.5",
     "typescript": "^5"
