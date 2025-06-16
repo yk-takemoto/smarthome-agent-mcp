@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import { z } from "zod";
 import express from "express";
 import { randomUUID } from "node:crypto";
+import { ProxyOAuthServerProvider } from "@modelcontextprotocol/sdk/server/auth/providers/proxyProvider.js";
+import { mcpAuthRouter } from "@modelcontextprotocol/sdk/server/auth/router.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
@@ -17,6 +19,7 @@ import {
   airconControlArgsSchemaObject,
   SwitchBotAirconControlFunction,
 } from "./tools/index.js";
+import { requireBearerAuth } from "@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js";
 
 dotenv.config();
 
@@ -108,12 +111,95 @@ const getServer = () => {
 const app = express();
 app.use(express.json());
 
+const proxyProvider = new ProxyOAuthServerProvider({
+  endpoints: {
+    authorizationUrl: process.env.OAUTH_AUTHORIZATION_URL!,
+    tokenUrl: process.env.OAUTH_TOKEN_URL!,
+    revocationUrl: process.env.OAUTH_REVOCATION_URL!,
+    // registrationUrl: process.env.OAUTH_REGISTRATION_URL!,
+  },
+  verifyAccessToken: async (token) => {
+    // debug
+    console.log("[mcp_server#verifyAccessToken]Verifying access token:", token);
+    return {
+      token,
+      clientId: process.env.OAUTH_CLIENT_ID!,
+      scopes: process.env.OAUTH_SCOPES?.split(",") || [],
+    };
+  },
+  getClient: async (client_id) => {
+    // debug
+    console.log("[mcp_server#getClient] Getting client information for client_id:", client_id);
+    return {
+      client_id,
+      client_secret: process.env.OAUTH_CLIENT_SECRET!,
+      redirect_uris: process.env.OAUTH_REDIRECT_URIS?.split(",") || [],
+    };
+  },
+});
+
+const bearerAuthMiddleware = requireBearerAuth({
+  provider: proxyProvider,
+  requiredScopes: process.env.OAUTH_SCOPES?.split(",") || [],
+});
+
+app.use(
+  mcpAuthRouter({
+    provider: proxyProvider,
+    issuerUrl: new URL(process.env.OAUTH_ISSUER!),
+    baseUrl: new URL("http://localhost:3100"),
+    // serviceDocumentationUrl: new URL("https://docs.example.com/"),
+  }),
+);
+
+// debug
+app.use("/", async (req, res, next) => {
+  console.log("Received request:", req.method, req.url);
+  // Log request headers
+  console.log("Request headers:", req.headers);
+  // Log request body if present
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log("Request body:", req.body);
+  } else {
+    console.log("No request body");
+  }
+  console.log("Sending response:", res.headersSent, res.statusCode);
+  return next();
+});
+
+// TODO implement the OAuth flow
+app.get("/oauth/callback", async (req, res, next) => {
+  console.log("Received OAuth callback request: ", req.query);
+  // Here you would typically handle the OAuth callback, e.g., exchange the authorization code for an access token
+
+  // TokenエンドポイントへPOSTリクエスト
+  const { code } = req.query;
+  if (!code || typeof code !== "string") {
+    console.error("Missing or invalid 'code' parameter in OAuth callback");
+    res.status(400).json({
+      jsonrpc: "2.0",
+      error: {
+        code: -32000,
+        message: "Bad Request: Missing or invalid 'code' parameter",
+      },
+      id: null,
+    });
+    return next();
+  }
+
+  res.status(200).json({
+    jsonrpc: "2.0",
+    result: "OAuth callback received",
+    id: null,
+  });
+});
+
 // Map to store transports by session ID
 const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
 let isHttpStatefull = false;
 
 // POST request handler for the Streamable HTTP transport
-app.post("/mcp", async (req, res) => {
+app.post("/mcp", bearerAuthMiddleware, async (req, res, next) => {
   console.log("Received POST MCP request:", req.body);
   try {
     let transport: StreamableHTTPServerTransport;
@@ -155,7 +241,7 @@ app.post("/mcp", async (req, res) => {
           },
           id: null,
         });
-        return;
+        return next();
       }
     } else {
       const server = getServer();

@@ -10,7 +10,7 @@
         "SWITCHBOT_ENDPOINT": "https://api.switch-bot.com",
         "SWITCHBOT_TOKEN": "<token>",
         "SWITCHBOT_SECRET_KEY": "<secret>",
-        "SWITCHBOT_FUNCTION_DEVICEIDS_MAP": "{\"controlTVBySwitchbot\": {\"main\": \"xxxx\"}, \"controlFanBySwitchbot\": {\"main\": \"xxxx\"}, \"controlAirconBySwitchbot\": {\"main\": \"xxxx\"}, \"controlLightBySwitchbot\": {\"main\": \"xxxx\", \"next\": \"xxxx\"}}"
+        "SWITCHBOT_FUNCTION_DEVICEIDS_MAP": "{\"tv\": {\"main\": \"xxxx\"}, \"fan\": {\"main\": \"xxxx\"}, \"aircon\": {\"main\": \"xxxx\"}, \"light\": {\"main\": \"xxxx\", \"next\": \"xxxx\"}}"
       }
     }
   }
