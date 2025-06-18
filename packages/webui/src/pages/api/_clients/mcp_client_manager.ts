@@ -2,6 +2,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { z } from "zod";
+import { createAuthToken } from "./key_util";
 
 const transportTypeSchema = z
   .enum(["stdio", "streamableHttp", "streamableHttpStateless"])
@@ -116,12 +117,14 @@ class McpClientManager {
   }
 
   private getStreamableHTTPServerTransport(
+    userId: string,
     sessionId?: string,
   ): StreamableHTTPClientTransport {
     const mcpClientStreamableHttpConfig =
       mcpClientStreamableHttpConfigSchema.parse({
         mcpServerUrl: process.env.MCPSERVER_URL,
       });
+    const token = createAuthToken(userId);
 
     return new StreamableHTTPClientTransport(
       new URL(mcpClientStreamableHttpConfig.mcpServerUrl),
@@ -131,6 +134,7 @@ class McpClientManager {
           headers: {
             "Content-Type": "application/json",
             Accept: "application/json, text/event-stream",
+            Authorization: `Bearer ${token}`,
           },
           credentials: "include",
           mode: "cors",
@@ -160,7 +164,7 @@ class McpClientManager {
     const transport =
       this.transportType === "streamableHttp" ||
       this.transportType === "streamableHttpStateless"
-        ? this.getStreamableHTTPServerTransport()
+        ? this.getStreamableHTTPServerTransport(userId)
         : this.getStdioClientTransport();
 
     await client.connect(transport);
