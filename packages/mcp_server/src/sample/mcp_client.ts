@@ -4,6 +4,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { CallToolResultSchema, ListToolsResultSchema } from "@modelcontextprotocol/sdk/types.js";
 import { createInterface } from "readline/promises";
+import { createAuthToken } from "@/utils/key_util.js";
 
 dotenv.config();
 let client: Client;
@@ -80,8 +81,14 @@ const getStdioClientTransport = () => {
 };
 
 const getStreamableHTTPServerTransport = (answer: string) => {
+  const token = createAuthToken("mcpclient-testuser");
   return new StreamableHTTPClientTransport(new URL("http://localhost:3100/mcp"), {
     sessionId: answer === "streamable-http" ? sessionId : undefined,
+    requestInit: {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
   });
 };
 
