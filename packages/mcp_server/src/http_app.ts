@@ -54,7 +54,7 @@ const getHttpApp = (isHttpStatefull: boolean) => {
   });
 
   const bearerAuthMiddleware = requireBearerAuth({
-    provider: proxyProvider,
+    verifier: proxyProvider,
   });
 
   // Generate a code challenge for PKCE

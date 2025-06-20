@@ -36,7 +36,7 @@ const decrypted2 = decryptWithPrivateKey(encrypted2, { privateKey });
 console.log("Decrypted data:", decrypted2);
 
 // Auth token creation and verification test
-const token2 = createAuthToken("local-test2", { publicKey });
+const token2 = createAuthToken("local-test2", { publicKey, expiresIn: 60 * 60 * 24 * 90 });
 console.log("\nAuth token (for Authorization header):");
 console.log(`Bearer ${token2}`);
 console.log("\nToken length:", token2.length);
